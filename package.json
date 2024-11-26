@@ -5,9 +5,9 @@
   "main": "promiseFor.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/snrraptopack/promise-for.git"
+    "url": "https://github.com/snrraptopack/promiseFor.git"
   },
-  "homepage": "https://github.com/snrraptopack/promise-for#readme",
+  "homepage": "https://github.com/snrraptopack/promiseFor-for#readme",
   "author": "Your Name",
   "license": "MIT",
   "keywords": [
