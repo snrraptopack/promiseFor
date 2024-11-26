@@ -1,5 +1,5 @@
 {
-  "name": "promise-for",
+  "name": "promise-for-wrapper",
   "version": "1.0.0",
   "description": "A Promise wrapper for callback-based functions",
   "main": "index.js",
