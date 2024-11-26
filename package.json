@@ -1,13 +1,21 @@
 {
   "name": "promise-for-wrapper",
-  "version": "1.0.1",
-  "description": "A Promise wrapper for callback-based functions",
+  "version": "1.0.2",
+  "description": "A wrapper for handling promises with ease.",
   "main": "promiseFor.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/promise-for.git"
+    "url": "https://github.com/yourusername/promise-for.git"
   },
-  "keywords": ["promise", "callback", "async"],
+  "homepage": "https://github.com/yourusername/promise-for#readme",
   "author": "Your Name",
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "promise",
+    "wrapper",
+    "async",
+    "promise for wrapper",
+    "async helper",
+    "error handling"
+  ]
 }
