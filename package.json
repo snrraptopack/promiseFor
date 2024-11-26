@@ -1,8 +1,8 @@
 {
   "name": "promise-for-wrapper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Promise wrapper for callback-based functions",
-  "main": "index.js",
+  "main": "promiseFor.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yourusername/promise-for.git"
