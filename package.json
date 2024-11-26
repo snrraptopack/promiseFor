@@ -1,12 +1,13 @@
 {
-  "name": "promisefor",
+  "name": "promise-for",
   "version": "1.0.0",
+  "description": "A Promise wrapper for callback-based functions",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/promise-for.git"
   },
-  "keywords": [],
-  "author": "Amihere Theophilus Junior",
-  "license": "ISC",
-  "description": "Better way of handling future data"
+  "keywords": ["promise", "callback", "async"],
+  "author": "Your Name",
+  "license": "MIT"
 }
