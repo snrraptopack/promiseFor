@@ -1,11 +1,13 @@
-
 /**
  * Enhanced Promise wrapper that accepts both callback-based and promise-based functions
  * and returns a tuple [result, error].
  *
  * @template T
  * @template E
- * @param {(callback: (error: E | null, result?: T) => void) => void | Promise<T>} promiseOrFunction - A function that returns a promise, or a callback-based function.
+ * @param {(() => Promise<T>) | Promise<T> | ((callback: (error: E | null, result?: T) => void) => void)} promiseOrFunction
+ *   - A Promise-returning function.
+ *   - A raw Promise.
+ *   - A callback-based function.
  * @returns {Promise<[T | null, E | null]>} - A tuple with the resolved data and any error encountered.
  */
 async function promiseFor(promiseOrFunction) {
@@ -22,3 +24,4 @@ async function promiseFor(promiseOrFunction) {
 }
 
 module.exports = {promiseFor}
+
