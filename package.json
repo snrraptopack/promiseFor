@@ -2,7 +2,7 @@
   "name": "promise-for-wrapper",
   "version": "2.0.0",
   "description": "A wrapper for handling promises with ease.",
-  "main": "promiseFor.js",
+  "main": "src/promiseFor.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/snrraptopack/promiseFor.git"
@@ -17,5 +17,13 @@
     "promise for wrapper",
     "async helper",
     "error handling"
-  ]
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/promiseFor.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
 }
