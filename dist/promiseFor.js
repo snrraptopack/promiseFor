@@ -98,4 +98,3 @@ function promiseFor(promiseOrFunction, postProcessor) {
         return result; // Returns [data, error]
     });
 }
-console.log("hello i am running");
