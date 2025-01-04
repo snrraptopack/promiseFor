@@ -9,51 +9,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HTTPError = void 0;
+exports.normalizeError = exports.pipeFor = exports.HTTPError = void 0;
 exports.promiseFor = promiseFor;
-/**
- * Custom error class for HTTP errors to improve consistency and reusability.
- */
-class HTTPError extends Error {
-    constructor(message, status, url) {
-        super(message);
-        this.name = 'HTTPError';
-        this.status = status;
-        this.url = url;
-    }
-}
-exports.HTTPError = HTTPError;
-/**
- * Utility function to normalize error details into a consistent format.
- * @param err The error object to normalize.
- * @param context A custom context for the error.
- * @returns The normalized error object with standardized properties.
- */
-function normalizeError(err, context = 'Error occurred') {
-    var _a, _b, _c, _d;
-    if (err instanceof Error) {
-        return {
-            message: err.message || 'Unknown error',
-            name: err.name || 'Error',
-            stack: err.stack || null,
-            status: ((_a = err.response) === null || _a === void 0 ? void 0 : _a.status) || err.status || null, // HTTP status codes
-            url: ((_c = (_b = err.response) === null || _b === void 0 ? void 0 : _b.config) === null || _c === void 0 ? void 0 : _c.url) || err.url || null, // Request URL (e.g., axios)
-            method: ((_d = err.config) === null || _d === void 0 ? void 0 : _d.method) || null, // HTTP method (e.g., GET, POST)
-            code: err.code || null, // Error codes, if provided
-            context,
-        };
-    }
-    return {
-        message: 'Unknown error',
-        name: 'Unknown',
-        stack: null,
-        status: null,
-        url: null,
-        method: null,
-        code: null,
-        context,
-    };
-}
+const error_1 = require("./error");
+Object.defineProperty(exports, "HTTPError", { enumerable: true, get: function () { return error_1.HTTPError; } });
+Object.defineProperty(exports, "normalizeError", { enumerable: true, get: function () { return error_1.normalizeError; } });
+const pipe_1 = require("./pipe");
+Object.defineProperty(exports, "pipeFor", { enumerable: true, get: function () { return pipe_1.pipeFor; } });
 // @ts-ignore
 /**
  * Enhanced Promise wrapper that accepts both callback-based and promise-based functions
@@ -74,7 +36,7 @@ function promiseFor(promiseOrFunction, postProcessor) {
             let resolvedValue = yield promise;
             // Special handling for HTTP responses (e.g., fetch)
             if (resolvedValue instanceof Response && !resolvedValue.ok) {
-                throw new HTTPError(`HTTP error! status: ${resolvedValue.status}`, resolvedValue.status, resolvedValue.url);
+                throw new error_1.HTTPError(`HTTP error! status: ${resolvedValue.status}`, resolvedValue.status, resolvedValue.url);
             }
             // Apply the post-processor, if provided
             if (postProcessor) {
@@ -86,14 +48,14 @@ function promiseFor(promiseOrFunction, postProcessor) {
                         : postProcessor(resolvedValue);
                 }
                 catch (postProcessorError) {
-                    result[1] = normalizeError(postProcessorError, 'Error occurred during post-processing');
+                    result[1] = (0, error_1.normalizeError)(postProcessorError, 'Error occurred during post-processing');
                     return result; // Return early with error if post-processing fails
                 }
             }
             result[0] = resolvedValue; // Success case
         }
         catch (err) {
-            result[1] = normalizeError(err, 'Error occurred during promise resolution');
+            result[1] = (0, error_1.normalizeError)(err, 'Error occurred during promise resolution');
         }
         return result; // Returns [data, error]
     });
