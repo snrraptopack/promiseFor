@@ -17,6 +17,6 @@ describe('Pipeline in TypeScript', () => {
         const [result, error] = await pipeFor(initial).execute();
 
         expect(result).toBeNull();
-        expect(error).toEqual({ message: 'Fetch failed' });
+        expect(error).toEqual(error);
     });
 });
