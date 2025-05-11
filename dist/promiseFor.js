@@ -16,15 +16,14 @@ Object.defineProperty(exports, "HTTPError", { enumerable: true, get: function ()
 Object.defineProperty(exports, "normalizeError", { enumerable: true, get: function () { return error_1.normalizeError; } });
 const pipe_1 = require("./pipe");
 Object.defineProperty(exports, "pipeFor", { enumerable: true, get: function () { return pipe_1.pipeFor; } });
-// @ts-ignore
 /**
- * Enhanced Promise wrapper that accepts both callback-based and promise-based functions
- * and returns a tuple [result, error]. It also supports optional post-processing of the resolved value.
+ * Enhanced Promise wrapper that accepts both promise-based and function-based inputs
+ * and returns a tuple [result, error]. Supports optional post-processing of the resolved value.
  *
  * @template T The type of the original resolved value.
- * @template R The type of the processed resolved value (if postProcessor is used).
- * @param promiseOrFunction - A Promise-returning function, raw Promise, or callback-based function.
- * @param postProcessor - Optional function to transform or process the resolved value.
+ * @template R The type of the processed resolved value (defaults to T if no postProcessor).
+ * @param promiseOrFunction A Promise-returning function or raw Promise.
+ * @param postProcessor Optional function to transform or process the resolved value.
  * @returns A tuple with the processed result and any error encountered.
  */
 function promiseFor(promiseOrFunction, postProcessor) {
@@ -33,30 +32,22 @@ function promiseFor(promiseOrFunction, postProcessor) {
         try {
             // Handle the input: function or promise
             const promise = typeof promiseOrFunction === 'function' ? promiseOrFunction() : promiseOrFunction;
-            let resolvedValue = yield promise;
+            const resolvedValue = yield promise;
             // Special handling for HTTP responses (e.g., fetch)
             if (resolvedValue instanceof Response && !resolvedValue.ok) {
                 throw new error_1.HTTPError(`HTTP error! status: ${resolvedValue.status}`, resolvedValue.status, resolvedValue.url);
             }
             // Apply the post-processor, if provided
             if (postProcessor) {
-                const isAsync = postProcessor.constructor.name === 'AsyncFunction';
-                try {
-                    // @ts-ignore
-                    resolvedValue = isAsync
-                        ? yield postProcessor(resolvedValue)
-                        : postProcessor(resolvedValue);
-                }
-                catch (postProcessorError) {
-                    result[1] = (0, error_1.normalizeError)(postProcessorError, 'Error occurred during post-processing');
-                    return result; // Return early with error if post-processing fails
-                }
+                result[0] = yield postProcessor(resolvedValue); // Handles both R and Promise<R>
             }
-            result[0] = resolvedValue; // Success case
+            else {
+                result[0] = resolvedValue; // R = T when postProcessor is undefined
+            }
         }
         catch (err) {
             result[1] = (0, error_1.normalizeError)(err, 'Error occurred during promise resolution');
         }
-        return result; // Returns [data, error]
+        return result;
     });
 }

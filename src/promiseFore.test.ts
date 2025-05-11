@@ -1,4 +1,6 @@
-import { pipeFor,ErrorContext } from './promiseFor';
+import { pipeFor,ErrorContext ,promiseFor} from './promiseFor';
+
+
 
 describe('Pipeline in TypeScript', () => {
     it('should transform and pipe correctly', async () => {
