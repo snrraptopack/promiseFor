@@ -10,7 +10,7 @@ type Result<T> = [T | null, ReturnType<typeof normalizeError> | null];
 class Pipeline<T> {
     private steps: PipelineStep<any, any>[] = [];
     private initialPromise: Promise<T>;
-    private promise: Promise<Result<T>>; // Ensure type inference
+    private promise: Promise<Result<T>>;
 
     constructor(initial: Promise<T> | (() => Promise<T>)) {
         this.initialPromise = initial as Promise<T>;
@@ -26,11 +26,9 @@ class Pipeline<T> {
         }
     }
 
-    transform<R extends T | null>(fn: (input: T) => R | Promise<R>): Pipeline<R> {
-        this.steps.push({ type: 'transform', fn });
-        const stepIndex = this.steps.length - 1;
-
-        this.promise = (async (): Promise<Result<R>> => {
+    transform<R>(fn: (input: T) => R | Promise<R>): Pipeline<R> {
+        const stepIndex = this.steps.length;
+        const newPromise = (async (): Promise<Result<R>> => {
             try {
                 const [value, error] = await this.promise;
 
@@ -56,29 +54,42 @@ class Pipeline<T> {
             }
         })();
 
-        return this as unknown as Pipeline<R>;
+        // @ts-ignore
+        const newPipeline = new Pipeline<R>(newPromise);
+        newPipeline.steps = [...this.steps, { type: 'transform', fn }];
+        return newPipeline;
     }
 
     pipe<R>(fn: (input: NonNullable<T>) => Promise<R>): Pipeline<R> {
-        this.steps.push({ type: 'pipe', fn });
-        const stepIndex = this.steps.length - 1;
+        const stepIndex = this.steps.length;
+        const newPromise = (async (): Promise<Result<R>> => {
+            try {
+                const [value, error] = await this.promise;
+                if (error) return [null, error];
+                if (value === null) {
+                    return [null, normalizeError(
+                        new Error('No value to pipe'),
+                        `Pipe step ${stepIndex} failed`
+                    )];
+                }
+                const result = await fn(value as NonNullable<T>);
+                return [result, null];
+            } catch (err) {
+                return [null, normalizeError(
+                    err,
+                    `Pipe step ${stepIndex} failed during execution`
+                )];
+            }
+        })();
 
-        const newPipeline = new Pipeline(async () => {
-            const [value, error] = await this.promise;
-            if (error) throw error;
-            if (value === null) throw new Error(`Pipe step ${stepIndex} failed: No value to pipe`);
-            if (value === undefined) throw new Error(`Pipe step ${stepIndex} failed: Value is undefined`);
-            return fn(value as NonNullable<T>);
-        });
-
-        // Copy the previous steps to the new pipeline
-        newPipeline.steps = [...this.steps];
-
+        // @ts-ignore
+        const newPipeline = new Pipeline<R>(newPromise);
+        newPipeline.steps = [...this.steps, { type: 'pipe', fn }];
         return newPipeline;
     }
 
     async execute(): Promise<Result<T>> {
-        return await this.promise;
+        return this.promise;
     }
 }
 
