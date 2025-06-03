@@ -1,6 +1,6 @@
-import { HTTPError, normalizeError } from './error';
-import type {ErrorContext} from "./error"
-import { pipeFor } from './pipe';
+import { HTTPError, normalizeError } from './error.js';
+import type {ErrorContext} from "./error.js"
+import { pipeFor } from './pipe.js';
 
 type PostProcessor<T, R> = (value: T) => R | Promise<R>;
 

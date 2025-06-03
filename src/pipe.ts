@@ -1,5 +1,5 @@
-import { normalizeError } from './error';
-import type { ErrorContext } from "./error";
+import { normalizeError } from './error.js';
+import type { ErrorContext } from "./error.js";
 
 type PipelineStep<T, R> = {
     type: 'transform' | 'pipe';
