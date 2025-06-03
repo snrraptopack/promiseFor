@@ -1,4 +1,5 @@
-import { normalizeError, type HTTPError, type ErrorContext } from './error';
+import { normalizeError } from './error';
+import type { ErrorContext } from "./error";
 
 type PipelineStep<T, R> = {
     type: 'transform' | 'pipe';
@@ -11,9 +12,11 @@ class Pipeline<T> {
     private steps: PipelineStep<any, any>[] = [];
     private initialPromise: Promise<T>;
     private promise: Promise<Result<T>>;
+    private context: string;
 
-    constructor(initial: Promise<T> | (() => Promise<T>)) {
+    constructor(initial: Promise<T> | (() => Promise<T>), context: string = 'Pipeline initialization') {
         this.initialPromise = initial as Promise<T>;
+        this.context = context;
         this.promise = this.wrapInitial(initial);
     }
 
@@ -22,46 +25,67 @@ class Pipeline<T> {
             const value = await (typeof initial === 'function' ? initial() : initial);
             return [value, null];
         } catch (err) {
-            return [null, normalizeError(err)];
+            return [null, normalizeError(err, this.context)];
         }
     }
 
-    transform<R>(fn: (input: T) => R | Promise<R>): Pipeline<R> {
+    transform<R>(fn: (input: T) => R | Promise<R>, stepContext?: string): Pipeline<R> {
         const stepIndex = this.steps.length;
-        const newPromise = (async (): Promise<R> => {
+        const defaultContext = `Transform step ${stepIndex}`;
+        const finalContext = stepContext || defaultContext;
+
+        const newPromise = (async (): Promise<Result<R>> => {
             const [value, error] = await this.promise;
             if (error) {
-                throw normalizeError(new Error(`Transform step ${stepIndex} failed`), error.context);
+                // Propagate the original error, don't create a new one
+                return [null, error];
             }
             if (value === null) {
-                throw normalizeError(new Error(`No value to transform`), `Transform step ${stepIndex} failed`);
+                return [null, normalizeError(new Error(`No value to transform`), finalContext)];
             }
-            const transformed = await fn(value);
-            if (transformed === undefined) {
-                throw normalizeError(new Error(`Transform step ${stepIndex} resulted in undefined`));
+            
+            try {
+                const transformed = await fn(value);
+                if (transformed === undefined) {
+                    return [null, normalizeError(new Error(`${finalContext} resulted in undefined`), finalContext)];
+                }
+                return [transformed, null];
+            } catch (err) {
+                return [null, normalizeError(err, finalContext)];
             }
-            return transformed;
         })();
 
-        const newPipeline = new Pipeline<R>(() => newPromise);
+        const newPipeline = new Pipeline<R>(() => newPromise.then(([value]) => value as R), finalContext);
+        newPipeline.promise = newPromise;
         newPipeline.steps = [...this.steps, { type: 'transform', fn }];
         return newPipeline;
     }
 
-    pipe<R>(fn: (input: NonNullable<T>) => Promise<R>): Pipeline<R> {
+    pipe<R>(fn: (input: NonNullable<T>) => Promise<R>, stepContext?: string): Pipeline<R> {
         const stepIndex = this.steps.length;
-        const newPromise = (async (): Promise<R> => {
+        const defaultContext = `Pipe step ${stepIndex}`;
+        const finalContext = stepContext || defaultContext;
+
+        const newPromise = (async (): Promise<Result<R>> => {
             const [value, error] = await this.promise;
             if (error) {
-                throw normalizeError(new Error(`Pipe step ${stepIndex} failed`), error.context);
+                // Propagate the original error, don't create a new one
+                return [null, error];
             }
             if (value === null) {
-                throw normalizeError(new Error(`No value to pipe`), `Pipe step ${stepIndex} failed`);
+                return [null, normalizeError(new Error(`No value to pipe`), finalContext)];
             }
-            return await fn(value as NonNullable<T>);
+            
+            try {
+                const result = await fn(value as NonNullable<T>);
+                return [result, null];
+            } catch (err) {
+                return [null, normalizeError(err, finalContext)];
+            }
         })();
 
-        const newPipeline = new Pipeline<R>(() => newPromise);
+        const newPipeline = new Pipeline<R>(() => newPromise.then(([value]) => value as R), finalContext);
+        newPipeline.promise = newPromise;
         newPipeline.steps = [...this.steps, { type: 'pipe', fn }];
         return newPipeline;
     }
@@ -71,6 +95,6 @@ class Pipeline<T> {
     }
 }
 
-export function pipeFor<T>(initial: Promise<T> | (() => Promise<T>)): Pipeline<T> {
-    return new Pipeline(initial);
+export function pipeFor<T>(initial: Promise<T> | (() => Promise<T>), context?: string): Pipeline<T> {
+    return new Pipeline(initial, context);
 }

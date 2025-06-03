@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,34 +7,72 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.normalizeError = exports.pipeFor = exports.HTTPError = void 0;
-exports.promiseFor = promiseFor;
-const error_1 = require("./error");
-Object.defineProperty(exports, "HTTPError", { enumerable: true, get: function () { return error_1.HTTPError; } });
-Object.defineProperty(exports, "normalizeError", { enumerable: true, get: function () { return error_1.normalizeError; } });
-const pipe_1 = require("./pipe");
-Object.defineProperty(exports, "pipeFor", { enumerable: true, get: function () { return pipe_1.pipeFor; } });
+import { HTTPError, normalizeError } from './error';
+import { pipeFor } from './pipe';
 /**
  * Enhanced Promise wrapper that accepts both promise-based and function-based inputs
  * and returns a tuple [result, error]. Supports optional post-processing of the resolved value.
  *
+ * This function provides two API styles:
+ * 1. Legacy: promiseFor(promise, postProcessor, context)
+ * 2. Modern: promiseFor(promise, { postProcessor?, context? })
+ *
  * @template T The type of the original resolved value.
  * @template R The type of the processed resolved value (defaults to T if no postProcessor).
  * @param promiseOrFunction A Promise-returning function or raw Promise.
- * @param postProcessor Optional function to transform or process the resolved value.
+ * @param optionsOrPostProcessor Optional configuration object or legacy postProcessor function.
+ * @param legacyContext Legacy context parameter (deprecated, use options.context instead).
  * @returns A tuple with the processed result and any error encountered.
+ *
+ * @example
+ * // Modern API with options object
+ * const [result, error] = await promiseFor(fetchData(), {
+ *     postProcessor: data => processData(data),
+ *     context: 'Data fetching and processing'
+ * });
+ *
+ * @example
+ * // Context only
+ * const [result, error] = await promiseFor(fetchData(), {
+ *     context: 'Loading user data'
+ * });
+ *
+ * @example
+ * // Legacy API (still supported)
+ * const [result, error] = await promiseFor(fetchData(), processData, 'Custom context');
  */
-function promiseFor(promiseOrFunction, postProcessor) {
+function promiseFor(promiseOrFunction, optionsOrPostProcessor, legacyContext) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = [null, null];
+        // Parse parameters based on API style used
+        let postProcessor;
+        let context = "Error occurred during promise resolution";
+        if (optionsOrPostProcessor) {
+            if (typeof optionsOrPostProcessor === 'function') {
+                // Legacy API: second param is postProcessor function
+                postProcessor = optionsOrPostProcessor;
+                // Use legacyContext if provided, otherwise use default
+                if (legacyContext) {
+                    context = legacyContext;
+                }
+            }
+            else {
+                // Modern API: second param is options object
+                postProcessor = optionsOrPostProcessor.postProcessor;
+                context = optionsOrPostProcessor.context || context;
+            }
+        }
+        else if (legacyContext) {
+            // Handle case where optionsOrPostProcessor is undefined but legacyContext is provided
+            context = legacyContext;
+        }
         try {
             // Handle the input: function or promise
             const promise = typeof promiseOrFunction === 'function' ? promiseOrFunction() : promiseOrFunction;
             const resolvedValue = yield promise;
             // Special handling for HTTP responses (e.g., fetch)
             if (resolvedValue instanceof Response && !resolvedValue.ok) {
-                throw new error_1.HTTPError(`HTTP error! status: ${resolvedValue.status}`, resolvedValue.status, resolvedValue.url);
+                throw new HTTPError(`HTTP error! status: ${resolvedValue.status}`, resolvedValue.status, resolvedValue.url);
             }
             // Apply the post-processor, if provided
             if (postProcessor) {
@@ -46,8 +83,9 @@ function promiseFor(promiseOrFunction, postProcessor) {
             }
         }
         catch (err) {
-            result[1] = (0, error_1.normalizeError)(err, 'Error occurred during promise resolution');
+            result[1] = normalizeError(err, context);
         }
         return result;
     });
 }
+export { promiseFor, HTTPError, pipeFor, normalizeError };

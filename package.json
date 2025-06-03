@@ -1,6 +1,6 @@
 {
   "name": "promise-for-wrapper",
-  "version": "3.1.4",
+  "version": "3.2.1",
   "description": "A wrapper for handling promises with ease.",
   "main": "dist/promiseFor.js",
   "repository": {
@@ -35,10 +35,7 @@
     "src",
     "README.md"
   ],
-  "dependencies": {
-    "undici-types": "^6.20.0"
-  },
-  "type": "commonjs",
+  "type": "module",
   "types": "./dist/promiseFor.d.ts",
   "bugs": {
     "url": "https://github.com/snrraptopack/promiseFor/issues"

@@ -1,4 +1,4 @@
-const { pipeFor } = require('../dist/promiseFor');
+import { pipeFor,promiseFor } from '../dist/promiseFor';
 
 describe('Pipeline in JavaScript', () => {
   it('should transform and pipe correctly', async () => {
@@ -20,3 +20,4 @@ describe('Pipeline in JavaScript', () => {
     expect(error).toEqual(error);
   });
 });
+
