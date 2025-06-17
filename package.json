@@ -1,0 +1,47 @@
+{
+  "name": "promise-for-wrapper",
+  "version": "3.2.3",
+  "description": "A wrapper for handling promises with ease.",
+  "main": "dist/promiseFor.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/snrraptopack/promiseFor.git"
+  },
+  "homepage": "https://github.com/snrraptopack/promiseFor#readme",
+  "author": "Amihere Theophils Junior",
+  "license": "MIT",
+  "keywords": [
+    "promise",
+    "wrapper",
+    "async",
+    "promise for wrapper",
+    "async helper",
+    "error handling"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/promiseFor.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "type": "module",
+  "types": "./dist/promiseFor.d.ts",
+  "bugs": {
+    "url": "https://github.com/snrraptopack/promiseFor/issues"
+  },
+  "overrides": {
+    "glob": "^10.3.10",
+    "inflight": "npm:lru-cache@^10.2.0"
+  }
+}
