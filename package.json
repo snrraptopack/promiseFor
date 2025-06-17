@@ -1,6 +1,6 @@
 {
   "name": "promise-for-wrapper",
-  "version": "3.2.5",
+  "version": "3.2.6",
   "description": "A wrapper for handling promises with ease.",
   "main": "dist/promiseFor.js",
   "repository": {
