@@ -52,8 +52,8 @@ describe('promiseFor', () => {
     expect(error?.name).toBe('Error');
   });
 
-  // Test HTTP error handling
-  test('should handle HTTP errors from Response objects', async () => {
+  // Test HTTP error handling with statusText
+  test('should handle HTTP errors from Response objects using statusText', async () => {
     const mockResponse = new Response(null, {
       status: 404,
       statusText: 'Not Found',
@@ -68,8 +68,57 @@ describe('promiseFor', () => {
     expect(result).toBeNull();
     expect(error).not.toBeNull();
     expect(error?.name).toBe('HTTPError');
+    expect(error?.message).toBe('Not Found');
     expect(error?.status).toBe(404);
     expect(error?.url).toBe('https://example.com/api');
+  });
+
+  // Test HTTP error handling with JSON error message
+  test('should extract error message from JSON response body', async () => {
+    const errorBody = JSON.stringify({ message: 'Custom error message from API' });
+    const mockResponse = new Response(errorBody, {
+      status: 400,
+      statusText: 'Bad Request',
+      headers: new Headers({
+        'Content-Type': 'application/json'
+      })
+    });
+    Object.defineProperty(mockResponse, 'ok', { value: false });
+    Object.defineProperty(mockResponse, 'url', { value: 'https://example.com/api' });
+
+    const promise = Promise.resolve(mockResponse);
+    const [result, error] = await promiseFor(promise);
+
+    expect(result).toBeNull();
+    expect(error).not.toBeNull();
+    expect(error?.name).toBe('HTTPError');
+    expect(error?.message).toBe('Custom error message from API');
+    expect(error?.status).toBe(400);
+    expect(error?.url).toBe('https://example.com/api');
+  });
+
+  // Test HTTP error handling with plain text error message
+  test('should use plain text response as error message', async () => {
+    const errorText = 'Login error: Invalid credentials';
+    const mockResponse = new Response(errorText, {
+      status: 401,
+      statusText: 'Unauthorized',
+      headers: new Headers({
+        'Content-Type': 'text/plain'
+      })
+    });
+    Object.defineProperty(mockResponse, 'ok', { value: false });
+    Object.defineProperty(mockResponse, 'url', { value: 'https://example.com/api/login' });
+
+    const promise = Promise.resolve(mockResponse);
+    const [result, error] = await promiseFor(promise);
+
+    expect(result).toBeNull();
+    expect(error).not.toBeNull();
+    expect(error?.name).toBe('HTTPError');
+    expect(error?.message).toBe(errorText);
+    expect(error?.status).toBe(401);
+    expect(error?.url).toBe('https://example.com/api/login');
   });
 
   // Test error in post-processor

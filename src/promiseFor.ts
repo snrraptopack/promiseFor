@@ -76,11 +76,43 @@ async function promiseFor<T, R = T>(
 
         // Special handling for HTTP responses (e.g., fetch)
         if (resolvedValue instanceof Response && !resolvedValue.ok) {
-            throw new HTTPError(
-                `HTTP error! status: ${resolvedValue.status}`,
-                resolvedValue.status,
-                resolvedValue.url
-            );
+            // Try to get the error message from the response
+            try {
+                // Clone the response to avoid consuming it
+                const clonedResponse = resolvedValue.clone();
+
+                // First try to read the response as JSON
+                const responseBody = await clonedResponse.text();
+                let errorMessage;
+
+                try {
+                    // Try to parse as JSON and extract message
+                    const jsonData = JSON.parse(responseBody);
+                    errorMessage = jsonData.message || jsonData.error || jsonData.errorMessage;
+                } catch (parseError) {
+                    // If not valid JSON, use the raw text if it exists
+                    errorMessage = responseBody && responseBody.trim() ? responseBody : null;
+                }
+
+                // If we got a message from the body, use it
+                // Otherwise, use statusText if available, or fall back to generic message
+                const message = errorMessage || 
+                               resolvedValue.statusText || 
+                               `HTTP error! status: ${resolvedValue.status}`;
+
+                throw new HTTPError(
+                    message,
+                    resolvedValue.status,
+                    resolvedValue.url
+                );
+            } catch (readError) {
+                // If we can't read the response body, fall back to the generic message
+                throw new HTTPError(
+                    resolvedValue.statusText || `HTTP error! status: ${resolvedValue.status}`,
+                    resolvedValue.status,
+                    resolvedValue.url
+                );
+            }
         }
 
         // Apply the post-processor, if provided
