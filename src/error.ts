@@ -4,12 +4,14 @@
 export class HTTPError extends Error {
     status: number;
     url: string;
+    responseData?: any; // Add this to store the full response data
 
-    constructor(message: string, status: number, url: string) {
+    constructor(message: string, status: number, url: string, responseData?: any) {
         super(message);
         this.name = 'HTTPError';
         this.status = status;
         this.url = url;
+        this.responseData = responseData; // Store the complete response data
     }
 }
 
@@ -22,56 +24,13 @@ export interface ErrorContext {
     method?: string | null;
     code?: string | null;
     context: string; // Specific context of the step/error
+    responseData?: any; // Add this field to store full response data
     stepInfo?: {
         index: number; // 0-based index of the step within its pipeline segment
         type: 'initialization' | 'transform' | 'pipe';
         pipelineContext?: string; // Context of the pipeline segment that defined this step
     };
 }
-
-
-/**
- * Utility function to normalize error details into a consistent format.
- * @param err The error object to normalize.
- * @param context A custom context for the error.
- * @param stepDetails Optional details about the pipeline step where the error occurred.
- * @returns The normalized error object with standardized properties.
- */
-export function normalizeError(
-    err: unknown,
-    context: string = 'Error occurred',
-    stepDetails?: { index: number; type: 'initialization' | 'transform' | 'pipe'; pipelineContext?: string }
-): ErrorContext {
-    let normalized: ErrorContext;
-    if (err instanceof Error) {
-        normalized = {
-            message: err.message || 'Unknown error',
-            name: err.name || 'Error',
-            stack: err.stack || null,
-            status: (err as any).response?.status || (err as any).status || null, // HTTP status codes
-            url: (err as any).response?.config?.url || (err as any).url || null, // Request URL (e.g., axios)
-            method: (err as any).config?.method || null,                // HTTP method (e.g., GET, POST)
-            code: (err as any).code || null,                            // Error codes, if provided
-            context,
-        };
-    } else {
-        normalized = {
-            message: String(err) || 'Unknown error', // Ensure message is a string
-            name: 'UnknownError', // More specific than 'Unknown'
-            stack: null,
-            status: null,
-            url: null,
-            method: null,
-            code: null,
-            context,
-        };
-    }
-    if (stepDetails) {
-        normalized.stepInfo = stepDetails;
-    }
-    return normalized;
-}
-
 export class PipelineError extends Error {
     public readonly errorContext: ErrorContext;
     public readonly statusCode: number;
@@ -116,4 +75,41 @@ export class PromiseForError extends Error {
         // Maintain prototype chain
         Object.setPrototypeOf(this, PromiseForError.prototype);
     }
+}
+
+export function normalizeError(
+    err: unknown,
+    context: string = 'Error occurred',
+    stepDetails?: { index: number; type: 'initialization' | 'transform' | 'pipe'; pipelineContext?: string }
+): ErrorContext {
+    let normalized: ErrorContext;
+    if (err instanceof Error) {
+        normalized = {
+            message: err.message || 'Unknown error',
+            name: err.name || 'Error',
+            stack: err.stack || null,
+            status: (err as any).response?.status || (err as any).status || null,
+            url: (err as any).response?.config?.url || (err as any).url || null,
+            method: (err as any).config?.method || null,
+            code: (err as any).code || null,
+            responseData: (err as any).responseData || null, // Add this line
+            context,
+        };
+    } else {
+        normalized = {
+            message: String(err) || 'Unknown error',
+            name: 'UnknownError',
+            stack: null,
+            status: null,
+            url: null,
+            method: null,
+            code: null,
+            responseData: null, // Add this line
+            context,
+        };
+    }
+    if (stepDetails) {
+        normalized.stepInfo = stepDetails;
+    }
+    return normalized;
 }

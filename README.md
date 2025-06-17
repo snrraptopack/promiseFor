@@ -65,6 +65,7 @@ interface ErrorContext {
     method?: string | null; // HTTP method for network requests
     code?: string | null;   // Error code (e.g., "ECONNREFUSED")
     context: string;        // Description of the operation that failed
+    responseData:any //contains the original response data
     stepInfo?: {            // For pipeline operations
         index: number;      // Position in the pipeline
         type: 'initialization' | 'transform' | 'pipe'; // Step type

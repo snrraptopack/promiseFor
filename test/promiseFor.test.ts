@@ -97,6 +97,41 @@ describe('promiseFor', () => {
     expect(error?.url).toBe('https://example.com/api');
   });
 
+  // Test HTTP error handling with complete response data preservation
+  test('should extract error message and preserve full response data from JSON response body', async () => {
+    const errorBody = JSON.stringify({ 
+      success: false,
+      message: 'invalid credentials', 
+      timestamp: '2025-06-17T22:21:03.478Z' 
+    });
+    const mockResponse = new Response(errorBody, {
+      status: 400,
+      statusText: 'Bad Request',
+      headers: new Headers({
+        'Content-Type': 'application/json'
+      })
+    });
+    Object.defineProperty(mockResponse, 'ok', { value: false });
+    Object.defineProperty(mockResponse, 'url', { value: 'http://127.0.0.1:8000/auth/login' });
+
+    const promise = Promise.resolve(mockResponse);
+    const [result, error] = await promiseFor(promise);
+
+    expect(result).toBeNull();
+    expect(error).not.toBeNull();
+    expect(error?.name).toBe('HTTPError');
+    expect(error?.message).toBe('invalid credentials'); // Should extract the message
+    expect(error?.status).toBe(400);
+    expect(error?.url).toBe('http://127.0.0.1:8000/auth/login');
+
+    // Check that full response data is preserved
+    expect(error?.responseData).toEqual({
+      success: false,
+      message: 'invalid credentials',
+      timestamp: '2025-06-17T22:21:03.478Z'
+    });
+  });
+
   // Test HTTP error handling with plain text error message
   test('should use plain text response as error message', async () => {
     const errorText = 'Login error: Invalid credentials';
